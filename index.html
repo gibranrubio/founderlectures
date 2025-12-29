@@ -1,230 +1,139 @@
-from pathlib import Path
-
-html = """<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Founder Lectures</title>
-  <style>
-    body{
-      margin:0;
-      background:#fff;
-      color:#000;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 15px;
-      line-height: 1.35;
-    }
-    a{ color:#0000ee; }
-    a:visited{ color:#551a8b; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Founder Lectures</title>
 
-    .page{
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 14px 12px 40px 12px;
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 18px;
-      align-items: start;
-    }
+<style>
+body{
+  margin:0;
+  background:#fff;
+  color:#000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size:15px;
+  line-height:1.35;
+}
+a{color:#0000ee;}
+a:visited{color:#551a8b;}
 
-    /* Left rail, Paul-era bevel vibe */
-    .rail{
-      width: 140px;
-    }
-    .rail .stack{
-      width: 112px;
-      border: 1px solid #9b9b9b;
-      padding: 6px 6px 8px 6px;
-      background: #ffffff;
-    }
-    .navbtn{
-      display:block;
-      width: 100%;
-      box-sizing: border-box;
-      margin: 0 0 6px 0;
-      padding: 6px 8px;
-      text-decoration: none;
-      color:#fff;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: .2px;
+.page{
+  display:flex;
+  align-items:flex-start;
+  gap:26px;
+  padding:14px 16px 60px 10px;
+  max-width:1400px;
+}
 
-      background: #5b5a86;
-      border: 1px solid #2f2f44;
+/* LEFT RAIL */
+.rail{width:112px;flex:0 0 auto;}
+.rail .stack{border:1px solid #9b9b9b;padding:6px;background:#fff;}
 
-      /* bevel */
-      box-shadow:
-        inset 1px 1px 0 rgba(255,255,255,.65),
-        inset -1px -1px 0 rgba(0,0,0,.35),
-        1px 1px 0 rgba(0,0,0,.25);
-    }
-    .navbtn:hover{
-      filter: brightness(1.06);
-      text-decoration: none;
-    }
-    .navbtn:active{
-      box-shadow:
-        inset -1px -1px 0 rgba(255,255,255,.45),
-        inset 1px 1px 0 rgba(0,0,0,.35),
-        0 0 0 rgba(0,0,0,0);
-      transform: translate(1px,1px);
-    }
+.navbtn{
+  display:block;
+  margin-bottom:6px;
+  padding:6px 8px;
+  background:#5b5a86;
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  text-decoration:none;
+  border:1px solid #2f2f44;
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.6),
+             inset -1px -1px 0 rgba(0,0,0,.35),
+             1px 1px 0 rgba(0,0,0,.25);
+}
+.navbtn:hover{filter:brightness(1.05);}
+.navbtn:active{transform:translate(1px,1px);}
 
-    /* Content */
-    h1{
-      font-size: 18px;
-      margin: 0 0 10px 0;
-      font-weight: 700;
-    }
-    p{ margin: 10px 0; }
-    .meta{
-      color:#333;
-      font-size: 13px;
-    }
-    ul{
-      margin: 10px 0 10px 18px;
-      padding: 0;
-    }
-    li{ margin: 6px 0; }
+/* CONTENT */
+.content{max-width:980px;position:relative;padding-top:6px;}
+.watermark{
+  position:absolute;
+  top:-6px;
+  left:0;right:0;
+  font-size:42px;
+  letter-spacing:10px;
+  color:#ddd;
+  opacity:.35;
+  pointer-events:none;
+}
 
-    .hr{
-      height:1px;
-      background:#ddd;
-      border:0;
-      margin: 18px 0;
-    }
+h1{
+  margin:42px 0 10px 0;
+  font-size:18px;
+  color:#8b3a3a;
+}
+p{margin:10px 0;}
+ul{margin-left:18px;}
+li{margin:6px 0;}
+.meta{color:#333;font-size:13px;}
 
-    .content{
-      min-width: 0;
-    }
-
-    /* Small screens */
-    @media (max-width: 760px){
-      .page{
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-      .rail{
-        width: auto;
-      }
-      .rail .stack{
-        width: auto;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-      }
-      .navbtn{
-        margin: 0;
-        text-align: center;
-        padding: 10px 8px;
-        font-size: 13px;
-      }
-    }
-  </style>
+/* MOBILE */
+@media(max-width:860px){
+  .page{flex-direction:column;}
+  .rail .stack{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .watermark{position:static;font-size:28px;letter-spacing:6px;margin-bottom:8px;}
+  h1{margin-top:10px;}
+}
+</style>
 </head>
+
 <body>
-  <div class="page">
-    <aside class="rail" aria-label="Site navigation">
-      <div class="stack">
-        <a class="navbtn" href="#home">Home</a>
-        <a class="navbtn" href="#lectures">Lectures</a>
-        <a class="navbtn" href="#format">Format</a>
-        <a class="navbtn" href="#speakers">Speakers</a>
-        <a class="navbtn" href="#attend">Attend</a>
-        <a class="navbtn" href="#notes">Notes</a>
-        <a class="navbtn" href="#faq">FAQs</a>
-        <a class="navbtn" href="#rss">RSS</a>
-        <a class="navbtn" href="#contact">Contact</a>
-      </div>
-    </aside>
+<div class="page">
 
-    <main class="content">
-      <section id="home">
-        <h1>Founder Lectures</h1>
-        <p>
-          We pick one builder. They teach what they are currently obsessed with. Then Q and A. In person. Austin.
-        </p>
-        <p>
-          Startups are counterintuitive. You do not think of a startup idea. You notice a problem and keep going until users pay or cannot live without it.
-          The fastest way to learn that is to be around people doing it.
-        </p>
-        <p class="meta">
-          Small rooms. Real examples. No gurus.
-        </p>
-      </section>
+<aside class="rail">
+<div class="stack">
+<a class="navbtn" href="#">Home</a>
+<a class="navbtn" href="#">Lectures</a>
+<a class="navbtn" href="#">Format</a>
+<a class="navbtn" href="#">Notes</a>
+<a class="navbtn" href="#">FAQs</a>
+<a class="navbtn" href="#">RSS</a>
+<a class="navbtn" href="#">Contact</a>
+</div>
+</aside>
 
-      <div class="hr"></div>
+<main class="content">
+<div class="watermark">FOUNDER LECTURES</div>
 
-      <section id="lectures">
-        <h1>Lectures</h1>
-        <ul>
-          <li><a href="#l001">Finding your first real users</a> <span class="meta">Feb 6, 2025</span></li>
-          <li><a href="#l002">Choosing a problem worth solving</a> <span class="meta">Draft</span></li>
-          <li><a href="#l003">Why your product is not ready yet</a> <span class="meta">Draft</span></li>
-          <li><a href="#l004">Great colleagues are a force multiplier</a> <span class="meta">Planned</span></li>
-          <li><a href="#l005">The honest way to talk to users</a> <span class="meta">Planned</span></li>
-        </ul>
-      </section>
+<h1>LECTURES</h1>
 
-      <div class="hr"></div>
+<p>If you’re not sure where to start, try 
+<a href="#">Finding Your First Real Users</a>, 
+<a href="#">Great Colleagues Are a Force Multiplier</a>, 
+or <a href="#">The Honest Way to Talk to Users</a>.
+</p>
 
-      <section id="format">
-        <h1>Format</h1>
-        <ul>
-          <li>35 minutes teaching</li>
-          <li>35 minutes Q and A</li>
-          <li>One page of notes the next day</li>
-        </ul>
-      </section>
+<p>
+Startups are counterintuitive. Most advice fails because it is abstract.
+Founder Lectures is simple: one builder teaches what they are deep in right now,
+then Q&A with people trying to do the same thing.
+</p>
 
-      <div class="hr"></div>
+<ul>
+<li><a href="#">Finding your first real users</a></li>
+<li><a href="#">Choosing a problem worth solving</a></li>
+<li><a href="#">Why your product is not ready yet</a></li>
+<li><a href="#">Great colleagues are a force multiplier</a></li>
+<li><a href="#">The honest way to talk to users</a></li>
+<li><a href="#">Selling before you build</a></li>
+<li><a href="#">From idea to first payment</a></li>
+<li><a href="#">What to measure when nothing is stable</a></li>
+</ul>
 
-      <section id="speakers">
-        <h1>Speakers</h1>
-        <p>
-          Only builders. If you have users, customers, or revenue, you qualify.
-        </p>
-      </section>
+<h1>FORMAT</h1>
+<ul>
+<li>35 minutes teaching</li>
+<li>35 minutes Q&A</li>
+<li>One page of notes the next day</li>
+</ul>
 
-      <section id="attend">
-        <h1>Attend</h1>
-        <p>
-          Seats are limited. The point is to be in the room, ask good questions, and leave with a clearer plan.
-        </p>
-      </section>
+<h1>CONTACT</h1>
+<p>Email: <a href="mailto:hello@founderlectures.com">hello@founderlectures.com</a></p>
 
-      <section id="notes">
-        <h1>Notes</h1>
-        <p>
-          Notes are the product. They are short, concrete, and written for people who will apply them.
-        </p>
-      </section>
-
-      <section id="faq">
-        <h1>FAQs</h1>
-        <ul>
-          <li><strong>Is this a conference?</strong> No. It is one builder at a time.</li>
-          <li><strong>Is it recorded?</strong> Sometimes. By default, notes are the product.</li>
-          <li><strong>Who is it for?</strong> People building, or about to build, who want fewer myths and more reality.</li>
-        </ul>
-      </section>
-
-      <section id="rss">
-        <h1>RSS</h1>
-        <p class="meta">Add an RSS feed later. Keep it simple.</p>
-      </section>
-
-      <section id="contact">
-        <h1>Contact</h1>
-        <p>Email: <a href="mailto:hello@founderlectures.com">hello@founderlectures.com</a></p>
-      </section>
-    </main>
-  </div>
+<p class="meta">© Founder Lectures</p>
+</main>
+</div>
 </body>
 </html>
-"""
-
-out_path = Path("/mnt/data/founder_lectures_pg_rail.html")
-out_path.write_text(html, encoding="utf-8")
-str(out_path)
