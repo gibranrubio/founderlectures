@@ -1,0 +1,715 @@
+from pathlib import Path
+
+html = r"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Founder Lectures | Archive (Web 1.0 Sheet)</title>
+  <style>
+    :root{
+      --grid:#b9b9b9;
+      --grid2:#e6e6e6;
+      --text:#111;
+      --muted:#444;
+      --link:#0000ee;
+      --visited:#551a8b;
+      --sheet:#ffffff;
+      --header:#f3f3f3;
+      --rowhdr:#f7f7f7;
+      --select:#cfe3ff;
+      --selectBorder:#2a66ff;
+      --ok:#0a7a0a;
+      --warn:#9a6b00;
+    }
+
+    html,body{
+      margin:0;
+      padding:0;
+      background:#fff;
+      color:var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    a{ color: var(--link); }
+    a:visited{ color: var(--visited); }
+
+    .wrap{
+      max-width: 1120px;
+      margin: 16px auto;
+      padding: 0 12px;
+    }
+
+    /* Web 1.0 header */
+    .topbar{
+      border: 1px solid var(--grid);
+      background: #fff;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .brand{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .brand h1{
+      font-size: 18px;
+      margin:0;
+      font-weight:700;
+    }
+    .tagline{
+      margin:0;
+      color:var(--muted);
+      font-size: 12px;
+    }
+    .nav{
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .nav a{
+      margin-right: 10px;
+      white-space: nowrap;
+    }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin: 10px 0 12px 0;
+    }
+
+    /* Spreadsheet frame */
+    .sheet-frame{
+      border: 1px solid var(--grid);
+      background: var(--sheet);
+    }
+
+    /* Fake toolbar + formula bar */
+    .sheet-toolbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding: 8px 10px;
+      background: var(--header);
+      border-bottom: 1px solid var(--grid);
+      font-size: 12px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .toolgroup{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      border:1px solid var(--grid);
+      background:#fff;
+      padding: 3px 6px;
+    }
+    .toolbtn{
+      display:inline-block;
+      border:1px solid var(--grid);
+      background:#fff;
+      padding: 2px 6px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: default;
+      user-select:none;
+    }
+    .toolbtn:active{ background:#f8f8f8; }
+
+    .formula{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      width:100%;
+      margin-top: 6px;
+    }
+    .namebox{
+      width:64px;
+      border:1px solid var(--grid);
+      background:#fff;
+      padding: 4px 6px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      color: var(--text);
+      flex: 0 0 auto;
+    }
+    .fx{
+      border:1px solid var(--grid);
+      background:#fff;
+      padding: 4px 6px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
+    .formulabox{
+      flex:1;
+      border:1px solid var(--grid);
+      background:#fff;
+      padding: 4px 6px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      color: var(--text);
+      overflow:hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      min-height: 18px;
+      min-width: 0;
+    }
+
+    /* Table wrapper enables horizontal scroll on mobile */
+    .tablewrap{
+      width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      border-bottom: 1px solid var(--grid);
+    }
+
+    table.sheet{
+      width:100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+      min-width: 980px; /* keeps "sheet" feel, scrolls on small screens */
+    }
+
+    table.sheet th, table.sheet td{
+      border: 1px solid var(--grid2);
+      padding: 6px 8px;
+      vertical-align: top;
+      background:#fff;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Column letters and row numbers */
+    .colhdr th{
+      background: var(--header);
+      border-color: var(--grid);
+      font-weight: 700;
+      text-align:center;
+      padding: 5px 6px;
+      user-select:none;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+    .corner{
+      width: 42px;
+      background: var(--header);
+      border-color: var(--grid);
+      position: sticky;
+      left: 0;
+      z-index: 4;
+    }
+    .rownum{
+      width: 42px;
+      text-align: right;
+      background: var(--rowhdr);
+      border-color: var(--grid);
+      color: var(--muted);
+      font-weight: 700;
+      user-select:none;
+      position: sticky;
+      left: 0;
+      z-index: 2;
+    }
+
+    /* Data header row */
+    .datahdr td{
+      background: #fafafa;
+      border-color: var(--grid);
+      font-weight: 700;
+      position: sticky;
+      top: 28px; /* below column letters row */
+      z-index: 2;
+    }
+
+    /* Keep first column sticky for usability */
+    td.stickyA{
+      position: sticky;
+      left: 42px; /* row number width */
+      z-index: 1;
+      background:#fff;
+    }
+    tr.datahdr td.stickyA{
+      background:#fafafa;
+      z-index: 3;
+    }
+
+    .mono{ font-family: "Courier New", Courier, monospace; }
+    .muted{ color: var(--muted); }
+    .pill{
+      display:inline-block;
+      padding: 1px 6px;
+      border: 1px solid var(--grid);
+      background: #fff;
+      font-size: 11px;
+    }
+    .pill.ok{ border-color: #86c786; }
+    .pill.warn{ border-color: #e6c27a; }
+
+    /* Selected cell */
+    td.cell{
+      cursor: cell;
+    }
+    td.cell.selected{
+      background: var(--select);
+      outline: 2px solid var(--selectBorder);
+      outline-offset: -2px;
+    }
+
+    /* Sheet tabs */
+    .tabs{
+      display:flex;
+      gap:6px;
+      align-items:flex-end;
+      padding: 8px 8px 0 8px;
+      background: var(--header);
+      border-top: 1px solid var(--grid);
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab{
+      border: 1px solid var(--grid);
+      border-bottom: none;
+      background: #fff;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select:none;
+      flex: 0 0 auto;
+    }
+    .tab.active{
+      font-weight:700;
+      background:#fff;
+      position: relative;
+      top: 1px;
+    }
+    .tab.inactive{
+      background:#f9f9f9;
+      color: var(--muted);
+    }
+
+    /* Panels for tabs */
+    .panel{
+      display:none;
+      padding: 10px 12px 12px 12px;
+      border-top: 1px solid var(--grid);
+      background:#fff;
+      font-size: 12px;
+    }
+    .panel.active{ display:block; }
+
+    /* Mobile: show card view instead of wide sheet */
+    .cards{
+      display:none;
+      padding: 10px;
+      border-bottom: 1px solid var(--grid);
+      background:#fff;
+    }
+    .card{
+      border: 1px solid var(--grid);
+      background:#fff;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .card h3{
+      margin: 0 0 6px 0;
+      font-size: 13px;
+    }
+    .kv{
+      margin: 6px 0 0 0;
+      color: var(--muted);
+    }
+    .kv strong{ color: var(--text); font-weight:700; }
+
+    .viewtoggle{
+      margin-left: 10px;
+      border:1px solid var(--grid);
+      background:#fff;
+      padding: 3px 6px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      user-select:none;
+    }
+
+    @media (max-width: 720px){
+      .wrap{ margin: 10px auto; }
+      .nav{ display:none; }
+      .toolgroup{ display:none; }
+      .sheet-toolbar{ gap:6px; }
+      .viewtoggle{ display:inline-block; }
+      table.sheet{ min-width: 900px; }
+      .hint{ margin-top: 8px; }
+      .cards{ display:block; }
+      .tablewrap{ display:none; }
+    }
+
+    @media (min-width: 721px){
+      .viewtoggle{ display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Founder Lectures</h1>
+        <p class="tagline">A small room in Austin where real founders teach what they are learning.</p>
+      </div>
+      <div class="nav mono">
+        <a href="#archive">Past Lectures</a>
+        <a href="#upcoming">Upcoming</a>
+        <a href="#speakers">Speakers</a>
+        <a href="#notes">Notes</a>
+      </div>
+    </div>
+
+    <p class="hint">
+      Web 1.0 sheet mode. On mobile it switches to cards. Click any cell on desktop to update the formula bar.
+    </p>
+
+    <div id="archive" class="sheet-frame">
+      <div class="sheet-toolbar mono">
+        <div class="toolgroup">
+          <span class="toolbtn">File</span>
+          <span class="toolbtn">Edit</span>
+          <span class="toolbtn">View</span>
+          <span class="toolbtn">Insert</span>
+        </div>
+        <div class="toolgroup">
+          <span class="toolbtn">B</span>
+          <span class="toolbtn">I</span>
+          <span class="toolbtn">U</span>
+          <span class="toolbtn">%</span>
+        </div>
+        <div class="toolgroup">
+          <span class="toolbtn">Sort</span>
+          <span class="toolbtn">Filter</span>
+          <span class="toolbtn">Share</span>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+          <span class="muted">Updated: <span id="updated"></span></span>
+          <button class="viewtoggle" id="toggleView" type="button">Toggle view</button>
+        </div>
+
+        <div class="formula">
+          <div id="namebox" class="namebox">B2</div>
+          <div class="fx">fx</div>
+          <div id="formulabox" class="formulabox">Finding your first real users</div>
+        </div>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="cards" id="cardsView" aria-label="Mobile archive cards">
+        <div class="card">
+          <h3 class="mono">001 | Finding your first real users</h3>
+          <div class="kv"><strong>Speaker:</strong> Alex Ramirez, Founder (CargoKit)</div>
+          <div class="kv"><strong>Date:</strong> 2025-02-06</div>
+          <div class="kv"><strong>City:</strong> Austin</div>
+          <div class="kv"><strong>Status:</strong> <span class="pill ok">DONE</span></div>
+          <div class="kv"><strong>Core takeaways:</strong><br>
+            • First users are reachable, not scalable<br>
+            • Charge early to learn faster<br>
+            • One painful job beats ten features<br>
+            • Reality forces the roadmap
+          </div>
+          <div class="kv"><strong>Mind changed:</strong> Pricing did not slow adoption. It increased trust.</div>
+        </div>
+
+        <div class="card">
+          <h3 class="mono">002 | Choosing a problem worth solving</h3>
+          <div class="kv"><strong>Speaker:</strong> Maria Chen, Founder (Quietly)</div>
+          <div class="kv"><strong>Date:</strong> 2025-03-00</div>
+          <div class="kv"><strong>City:</strong> Austin</div>
+          <div class="kv"><strong>Status:</strong> <span class="pill warn">DRAFT</span></div>
+          <div class="kv"><strong>Core takeaways:</strong><br>
+            • Demand can be tested without code<br>
+            • Time or money is the signal<br>
+            • Walking away early is strength<br>
+            • Obvious problems start as whispers
+          </div>
+          <div class="kv"><strong>Mind changed:</strong> She stopped building features before she had payments.</div>
+        </div>
+
+        <div class="card" style="margin-bottom:0;">
+          <h3 class="mono">003 | Why your product is not ready yet</h3>
+          <div class="kv"><strong>Speaker:</strong> David Morales, Founder (Runbook)</div>
+          <div class="kv"><strong>Date:</strong> 2025-04-00</div>
+          <div class="kv"><strong>City:</strong> Austin</div>
+          <div class="kv"><strong>Status:</strong> <span class="pill warn">DRAFT</span></div>
+          <div class="kv"><strong>Core takeaways:</strong><br>
+            • Confusion breaks trust faster than missing features<br>
+            • Support is the real product<br>
+            • Onboarding beats roadmap<br>
+            • Fix the first week
+          </div>
+          <div class="kv"><strong>Mind changed:</strong> He paused features for 60 days and rebuilt onboarding.</div>
+        </div>
+      </div>
+
+      <!-- Desktop sheet -->
+      <div class="tablewrap" id="tableView">
+        <table class="sheet" aria-label="Founder Lectures Archive Sheet">
+          <colgroup>
+            <col style="width:42px" />
+            <col style="width:90px" />
+            <col style="width:260px" />
+            <col style="width:170px" />
+            <col style="width:120px" />
+            <col style="width:110px" />
+            <col style="width:230px" />
+            <col style="width:260px" />
+            <col style="width:210px" />
+          </colgroup>
+
+          <thead>
+            <tr class="colhdr">
+              <th class="corner"></th>
+              <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr class="datahdr">
+              <th class="rownum">1</th>
+              <td class="cell stickyA" data-cell="A1">ID</td>
+              <td class="cell" data-cell="B1">Lecture</td>
+              <td class="cell" data-cell="C1">Speaker</td>
+              <td class="cell" data-cell="D1">Date</td>
+              <td class="cell" data-cell="E1">City</td>
+              <td class="cell" data-cell="F1">Status</td>
+              <td class="cell" data-cell="G1">Core Takeaways</td>
+              <td class="cell" data-cell="H1">Mind Changed</td>
+            </tr>
+
+            <tr>
+              <th class="rownum">2</th>
+              <td class="cell stickyA mono" data-cell="A2">001</td>
+              <td class="cell selected" data-cell="B2"><strong>Finding your first real users</strong><br><span class="muted">How the first customers actually appear</span></td>
+              <td class="cell" data-cell="C2">Alex Ramirez<br><span class="muted">Founder, CargoKit</span></td>
+              <td class="cell mono" data-cell="D2">2025-02-06</td>
+              <td class="cell" data-cell="E2">Austin</td>
+              <td class="cell" data-cell="F2"><span class="pill ok">DONE</span></td>
+              <td class="cell" data-cell="G2">
+                • First users are reachable, not scalable<br>
+                • Charge early to learn faster<br>
+                • One painful job beats ten features<br>
+                • Reality forces the roadmap
+              </td>
+              <td class="cell" data-cell="H2">
+                Pricing did not slow adoption. It increased trust.
+              </td>
+            </tr>
+
+            <tr>
+              <th class="rownum">3</th>
+              <td class="cell stickyA mono" data-cell="A3">002</td>
+              <td class="cell" data-cell="B3"><strong>Choosing a problem worth solving</strong><br><span class="muted">Polite interest vs real demand</span></td>
+              <td class="cell" data-cell="C3">Maria Chen<br><span class="muted">Founder, Quietly</span></td>
+              <td class="cell mono" data-cell="D3">2025-03-00</td>
+              <td class="cell" data-cell="E3">Austin</td>
+              <td class="cell" data-cell="F3"><span class="pill warn">DRAFT</span></td>
+              <td class="cell" data-cell="G3">
+                • Demand can be tested without code<br>
+                • Time or money is the signal<br>
+                • Walking away early is strength<br>
+                • Obvious problems start as whispers
+              </td>
+              <td class="cell" data-cell="H3">
+                She stopped building features before she had payments.
+              </td>
+            </tr>
+
+            <tr>
+              <th class="rownum">4</th>
+              <td class="cell stickyA mono" data-cell="A4">003</td>
+              <td class="cell" data-cell="B4"><strong>Why your product is not ready yet</strong><br><span class="muted">Churn is usually one broken moment</span></td>
+              <td class="cell" data-cell="C4">David Morales<br><span class="muted">Founder, Runbook</span></td>
+              <td class="cell mono" data-cell="D4">2025-04-00</td>
+              <td class="cell" data-cell="E4">Austin</td>
+              <td class="cell" data-cell="F4"><span class="pill warn">DRAFT</span></td>
+              <td class="cell" data-cell="G4">
+                • Confusion breaks trust faster than missing features<br>
+                • Support is the real product<br>
+                • Onboarding beats roadmap<br>
+                • Fix the first week
+              </td>
+              <td class="cell" data-cell="H4">
+                He paused features for 60 days and rebuilt onboarding.
+              </td>
+            </tr>
+
+            <tr><th class="rownum">5</th><td class="cell stickyA mono" data-cell="A5"></td><td class="cell" data-cell="B5"></td><td class="cell" data-cell="C5"></td><td class="cell mono" data-cell="D5"></td><td class="cell" data-cell="E5"></td><td class="cell" data-cell="F5"></td><td class="cell" data-cell="G5"></td><td class="cell" data-cell="H5"></td></tr>
+            <tr><th class="rownum">6</th><td class="cell stickyA mono" data-cell="A6"></td><td class="cell" data-cell="B6"></td><td class="cell" data-cell="C6"></td><td class="cell mono" data-cell="D6"></td><td class="cell" data-cell="E6"></td><td class="cell" data-cell="F6"></td><td class="cell" data-cell="G6"></td><td class="cell" data-cell="H6"></td></tr>
+            <tr><th class="rownum">7</th><td class="cell stickyA mono" data-cell="A7"></td><td class="cell" data-cell="B7"></td><td class="cell" data-cell="C7"></td><td class="cell mono" data-cell="D7"></td><td class="cell" data-cell="E7"></td><td class="cell" data-cell="F7"></td><td class="cell" data-cell="G7"></td><td class="cell" data-cell="H7"></td></tr>
+            <tr><th class="rownum">8</th><td class="cell stickyA mono" data-cell="A8"></td><td class="cell" data-cell="B8"></td><td class="cell" data-cell="C8"></td><td class="cell mono" data-cell="D8"></td><td class="cell" data-cell="E8"></td><td class="cell" data-cell="F8"></td><td class="cell" data-cell="G8"></td><td class="cell" data-cell="H8"></td></tr>
+            <tr><th class="rownum">9</th><td class="cell stickyA mono" data-cell="A9"></td><td class="cell" data-cell="B9"></td><td class="cell" data-cell="C9"></td><td class="cell mono" data-cell="D9"></td><td class="cell" data-cell="E9"></td><td class="cell" data-cell="F9"></td><td class="cell" data-cell="G9"></td><td class="cell" data-cell="H9"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tabs mono" role="tablist" aria-label="Sheet Tabs">
+        <div class="tab active" data-tab="ARCHIVE" role="tab" aria-selected="true">ARCHIVE</div>
+        <div class="tab inactive" data-tab="UPCOMING" role="tab" aria-selected="false">UPCOMING</div>
+        <div class="tab inactive" data-tab="SPEAKERS" role="tab" aria-selected="false">SPEAKERS</div>
+        <div class="tab inactive" data-tab="NOTES" role="tab" aria-selected="false">NOTES</div>
+      </div>
+
+      <div class="panel active" data-panel="ARCHIVE">
+        <div class="muted">
+          Archive is a log. Keep it simple. Add one row per lecture.
+        </div>
+      </div>
+
+      <div id="upcoming" class="panel" data-panel="UPCOMING">
+        <div class="mono"><strong>Upcoming</strong></div>
+        <p class="muted" style="margin:6px 0 0 0;">
+          Add your next lecture details here. Keep it short: topic, speaker, date, neighborhood, seats.
+        </p>
+        <ul style="margin:8px 0 0 18px;">
+          <li>Topic:</li>
+          <li>Speaker:</li>
+          <li>Date:</li>
+          <li>Neighborhood:</li>
+          <li>Seats:</li>
+        </ul>
+      </div>
+
+      <div id="speakers" class="panel" data-panel="SPEAKERS">
+        <div class="mono"><strong>Speakers</strong></div>
+        <p class="muted" style="margin:6px 0 0 0;">
+          Only builders. If they have users, customers, or revenue, they qualify.
+        </p>
+        <p style="margin:8px 0 0 0;">
+          Email: <a href="mailto:hello@founderlectures.com">hello@founderlectures.com</a>
+        </p>
+        <p class="muted" style="margin:6px 0 0 0;">
+          Include: who they are, what they are deep in, and one link that proves it.
+        </p>
+      </div>
+
+      <div id="notes" class="panel" data-panel="NOTES">
+        <div class="mono"><strong>Notes</strong></div>
+        <div style="margin-top:8px;" class="muted">
+          Founder Lectures is built around a simple belief: startups are learned by being around people doing them.
+        </div>
+        <ul style="margin:8px 0 0 18px;">
+          <li>Small rooms beat big stages.</li>
+          <li>Real builders beat gurus.</li>
+          <li>Takeaways beat vibes.</li>
+          <li>Clusters beat solitude.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Updated timestamp
+    (function(){
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2,'0');
+      document.getElementById('updated').textContent =
+        d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+        ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    })();
+
+    // Cell selection + formula bar (desktop sheet)
+    const nameBox = document.getElementById('namebox');
+    const formulaBox = document.getElementById('formulabox');
+
+    function getPlainTextFromCell(td){
+      const t = (td.innerText || '').replace(/\s+/g,' ').trim();
+      return t.length ? t : '';
+    }
+
+    function clearSelection(){
+      document.querySelectorAll('#tableView td.cell.selected').forEach(el => el.classList.remove('selected'));
+    }
+
+    function selectCell(td){
+      if (!td) return;
+      clearSelection();
+      td.classList.add('selected');
+      const addr = td.getAttribute('data-cell') || '';
+      nameBox.textContent = addr || '';
+      formulaBox.textContent = getPlainTextFromCell(td) || '';
+    }
+
+    document.querySelectorAll('#tableView td.cell').forEach(td => {
+      td.addEventListener('click', () => selectCell(td));
+    });
+
+    // Tabs
+    function setActiveTab(tabName){
+      document.querySelectorAll('.tab').forEach(t => {
+        const isActive = t.getAttribute('data-tab') === tabName;
+        t.classList.toggle('active', isActive);
+        t.classList.toggle('inactive', !isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      document.querySelectorAll('.panel').forEach(p => {
+        const isActive = p.getAttribute('data-panel') === tabName;
+        p.classList.toggle('active', isActive);
+      });
+    }
+
+    document.querySelectorAll('.tab').forEach(t => {
+      t.addEventListener('click', () => setActiveTab(t.getAttribute('data-tab')));
+    });
+
+    // Default selected cell
+    selectCell(document.querySelector('#tableView td.cell.selected') || document.querySelector('#tableView td.cell'));
+
+    // Mobile toggle between cards and sheet
+    const toggleBtn = document.getElementById('toggleView');
+    const cardsView = document.getElementById('cardsView');
+    const tableView = document.getElementById('tableView');
+
+    function isMobileWidth(){
+      return window.matchMedia('(max-width: 720px)').matches;
+    }
+
+    function setMobileView(mode){
+      if (!isMobileWidth()) return; // desktop uses sheet
+      if (mode === 'sheet'){
+        cardsView.style.display = 'none';
+        tableView.style.display = 'block';
+      } else {
+        cardsView.style.display = 'block';
+        tableView.style.display = 'none';
+      }
+      localStorage.setItem('fl_view', mode);
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      const current = (localStorage.getItem('fl_view') || 'cards');
+      setMobileView(current === 'cards' ? 'sheet' : 'cards');
+    });
+
+    function syncOnResize(){
+      if (!isMobileWidth()){
+        cardsView.style.display = 'none';
+        tableView.style.display = 'block';
+        return;
+      }
+      const pref = localStorage.getItem('fl_view') || 'cards';
+      setMobileView(pref);
+    }
+
+    window.addEventListener('resize', syncOnResize);
+    syncOnResize();
+  </script>
+</body>
+</html>
+"""
+
+out_path = Path("/mnt/data/founder_lectures_web1_sheet_mobile.html")
+out_path.write_text(html, encoding="utf-8")
+str(out_path)
